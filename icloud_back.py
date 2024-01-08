@@ -91,11 +91,11 @@ def download_photos(api : PyiCloudService, para:user_setting):
 def main():
     para = user_setting()
     args = sys.argv
-    if len(args) >= 4:
-        print(f'Account:{args[2]} Password:{args[3]}')
-        api = log_in(args[2].strip(), args[3].strip())
+    if len(args) >= 3:
+        print(f'Account:{args[1]} Password:{args[2]}')
+        api = log_in(args[1].strip(), args[2].strip())
         with open(para.data_file_path, 'w') as f:
-            f.write(args[2])
+            f.write(args[1])
         del api
 
     if not os.path.exists(para.data_file_path):
@@ -108,10 +108,10 @@ def main():
             accout = f.read().strip()
             print(f'Begin logging in to your account:{accout}')
             api = log_in(accout)
-            print(f'log suceess！')
+            print(f'log suceess!')
 
         if api:
-            print(f'start sync photos...')
+            print(f'start back-up photos...')
             download_photos(api, para)
             del api
             print(f'sync over, after {para.backup_fre_in_min} mins will sync again...')
