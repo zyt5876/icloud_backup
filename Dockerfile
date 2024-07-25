@@ -9,9 +9,9 @@ RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
 
 RUN apk add --update --no-cache curl jq py3-configobj py3-pip py3-setuptools python3 python3-dev
 RUN pip install pyicloud --break-system-packages
-RUN sed -i 's/idmsa.apple.com/idmsa.apple.com.cn/g' /usr/lib/python3.11/site-packages/pyicloud/base.py
-RUN sed -i 's/www.icloud.com/www.icloud.com.cn/g' /usr/lib/python3.11/site-packages/pyicloud/base.py
-RUN sed -i 's/setup.icloud.com/setup.icloud.com.cn/g' /usr/lib/python3.11/site-packages/pyicloud/base.py
+RUN sed -i 's/idmsa.apple.com/idmsa.apple.com.cn/g' /usr/lib/python3.12/site-packages/pyicloud/base.py
+RUN sed -i 's/www.icloud.com/www.icloud.com.cn/g' /usr/lib/python3.12/site-packages/pyicloud/base.py
+RUN sed -i 's/setup.icloud.com/setup.icloud.com.cn/g' /usr/lib/python3.12/site-packages/pyicloud/base.py
 
 #修改时区
 RUN apk add --update --no-cache tzdata \
