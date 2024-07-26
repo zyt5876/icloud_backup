@@ -29,4 +29,4 @@ jobs:
       run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
 
     - name: Push to Docker Hub
-      run: docker push my-image-name:$(date +%s)
+      run: docker push zyt5876/icloud_back:$(date +%s)
