@@ -2,9 +2,8 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
+    tags:
+      - 'v*.*.*' #推送类似于"v1.0.0"这样的标签时再编译
 
 jobs:
 
@@ -21,12 +20,16 @@ jobs:
         path: /var/lib/docker
         key: ${{ runner.os }}-docker-${{ hashFiles('**/Dockerfile') }}
         restore-keys: ${{ runner.os }}-docker-
+
+    - name: Extract tag name #提取tag
+      id: extract-tag
+      run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
     
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag zyt5876/icloud_back:$(date "+%Y-%m-%d")
+      run: docker build . --file Dockerfile --tag zyt5876/icloud_back:${{ env.TAG_NAME }}
       
     - name: Login to Docker Hub
       run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
 
     - name: Push to Docker Hub
-      run: docker push zyt5876/icloud_back:$(date "+%Y-%m-%d")
+      run: docker push zyt5876/icloud_back:${{ env.TAG_NAME }}
