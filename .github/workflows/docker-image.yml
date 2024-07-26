@@ -23,7 +23,7 @@ jobs:
         restore-keys: ${{ runner.os }}-docker-
     
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+      run: docker build . --file Dockerfile --tag zyt5876/icloud_back:$(date +%s)
       
     - name: Login to Docker Hub
       run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
