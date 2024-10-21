@@ -21,4 +21,4 @@ RUN apk add --update --no-cache tzdata \
 
 HEALTHCHECK --start-period=10s --interval=1m --timeout=10s CMD /app/healthcheck.sh
 
-CMD [ "sh" ]
+CMD ["python3", "/app/icloud_back.py"]
