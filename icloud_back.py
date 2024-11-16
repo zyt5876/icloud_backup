@@ -146,7 +146,7 @@ def main():
         first_log(sys.argv, icloud_back, debug_mode) # 首次登录
     if not icloud_back.data_exis():
         help_info()
-        exit(1)
+        exit(0)
 
     while True:
         with open(icloud_back.data_file_path, 'r') as f:

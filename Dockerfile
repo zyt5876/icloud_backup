@@ -21,4 +21,6 @@ RUN apk add --update --no-cache tzdata \
 
 HEALTHCHECK --start-period=30s --interval=1m --timeout=30s CMD /app/healthcheck.sh
 
-CMD ["python3", "/app/icloud_back.py"]
+# 容器启动会运行该命令, tail -f /dev/null 是保活的,没有的话脚本运行完就退了
+CMD ["sh", "-c", "python3 /app/icloud_back.py && tail -f /dev/null"]
+
