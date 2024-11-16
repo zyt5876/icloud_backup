@@ -3,15 +3,15 @@ LABEL chen yong
 WORKDIR /app
 COPY icloud_back.py /app
 COPY healthcheck.sh /app
+COPY pyicloud /app/pyicloud
 
 #切换阿里源
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
 
 RUN apk add --update --no-cache curl jq py3-configobj py3-pip py3-setuptools python3 python3-dev
-RUN pip install pyicloud --break-system-packages
-RUN sed -i 's/idmsa.apple.com/idmsa.apple.com.cn/g' /usr/lib/python3.12/site-packages/pyicloud/base.py
-RUN sed -i 's/www.icloud.com/www.icloud.com.cn/g' /usr/lib/python3.12/site-packages/pyicloud/base.py
-RUN sed -i 's/setup.icloud.com/setup.icloud.com.cn/g' /usr/lib/python3.12/site-packages/pyicloud/base.py
+# pyicloud所需要的库, 注意Alpine linux本身安装的命令使用apk,这种方式实际上可能具有破坏性:--break-system-packages
+COPY pyicloud_requirements.txt /app/
+RUN pip install --no-cache-dir -r pyicloud_requirements.txt --break-system-packages
 
 #修改时区
 RUN apk add --update --no-cache tzdata \
@@ -19,6 +19,6 @@ RUN apk add --update --no-cache tzdata \
     && echo "Asia/Shanghai" > /etc/timezone
 
 
-HEALTHCHECK --start-period=10s --interval=1m --timeout=10s CMD /app/healthcheck.sh
+HEALTHCHECK --start-period=30s --interval=1m --timeout=30s CMD /app/healthcheck.sh
 
 CMD ["python3", "/app/icloud_back.py"]

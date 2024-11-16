@@ -1,10 +1,15 @@
 import os
 import sys
 import time
+import keyring
 from pyicloud import PyiCloudService
-from pyicloud.exceptions import PyiCloudAPIResponseException
+from pyicloud.exceptions import (
+    PyiCloudAPIResponseException , PyiCloudServiceNotActivatedException,
+    PyiCloudFailedLoginException, PyiCloud2SARequiredException,
+    PyiCloudNoStoredPasswordAvailableException, PyiCloudNoDevicesException
+)
 
-class user_setting:
+class IcloudBack:
     def __init__(self):
         self.photo_path = os.environ.get('PHOTO_PATH')
         if not self.photo_path:
@@ -16,17 +21,37 @@ class user_setting:
 
         self.data_file_path = './.icloud_backup_data'
 
-def log_in(accout, password='null'):
+    def data_exis(self):
+        if os.path.exists(self.data_file_path):
+            return True
+        else:
+            return False
+        return False
+
+def log_in(accout=None, password=None):
+    api = None
     try:
-        api = PyiCloudService(accout, password)
+        print(f'Begin logging in to your account:{accout}')
+        if (password != None): # 首次登录
+            api = PyiCloudService(accout, password, china_mainland=True)
+        else: # 拥有cookies,无密码登录
+            api = PyiCloudService(accout, china_mainland=True)
     except PyiCloudAPIResponseException:
         print('Login error, please check your account and password!')
-        exit(-1)
-    except PyiCloudAPIResponseException:
-        print('Login error, please check your account and password!')
+    except PyiCloudServiceNotActivatedException:
+        print('PyiCloud Service Not Activated Exception!')
+    except PyiCloudFailedLoginException:
+        print('PyiCloud Failed Login Exception!')
+    except PyiCloud2SARequiredException:
+        print('PyiCloud 2SA Required Exception!')
+    except PyiCloudNoStoredPasswordAvailableException:
+        print('PyiCloud No Stored Password Available Exception!')
+    except PyiCloudNoDevicesException:
+        print('PyiCloud No Devices Exception!')
     except:
         print('Unknown error!!')
         sys.exc_info()
+    if api == None:
         exit(-1)
 
     cookies = api.session.cookies
@@ -70,10 +95,10 @@ def log_in(accout, password='null'):
             sys.exit(1)
     return api
 
-def download_photos(api : PyiCloudService, para:user_setting):
+def download_photos(api : PyiCloudService, icloud_back:IcloudBack):
     photo_albums_keys = api.photos.albums.keys()
     for albums_dir in photo_albums_keys:
-        album_path = os.path.join(para.photo_path, albums_dir)
+        album_path = os.path.join(icloud_back.photo_path, albums_dir)
         if not os.path.exists(album_path):
             os.makedirs(album_path)
         photos = iter(api.photos.albums[albums_dir])
@@ -88,34 +113,53 @@ def download_photos(api : PyiCloudService, para:user_setting):
                 except PyiCloudAPIResponseException:
                     print("iCloud response error!!! ", photo.filename)
 
-def main():
-    para = user_setting()
-    args = sys.argv
-    if len(args) >= 3:
-        print(f'Account:{args[1]} Password:{args[2]}')
-        api = log_in(args[1].strip(), args[2].strip())
-        with open(para.data_file_path, 'w') as f:
-            f.write(args[1])
-        del api
+def help_info():
+    print('\nPlease initialize your account for the first login:')
+    print("Enter: python icloud_back.py init")
+    print("Then input your accout and password\n")
 
-    if not os.path.exists(para.data_file_path):
-        print('\nPlease initialize your account for the first login:')
-        print("python icloud_back.py init [user_name] [password]\n\n")
+def first_log(args, icloud_back, debug_mode):
+    if (debug_mode): # 调试模式, 直接给账户密码
+        if len(args) >= 3:
+            print(f'Account:{args[1]} Password:{args[2]}')
+            username = args[1]
+            password = args[2]
+    else: # 正常模式,用户输入账户密码
+        print("Please input your accout:")
+        username = input()
+        print("Please input your password:")
+        password = input()
+    api = log_in(username, password)
+    with open(icloud_back.data_file_path, 'w') as f: # 将用户名记录到文件
+        f.write(username)
+    del api
+    keyring.set_password("icloud", username, password)
+
+    if not os.path.exists(icloud_back.data_file_path):
+        help_info()
         exit(0)
 
-    while True:
-        with open(para.data_file_path, 'r') as f:
-            accout = f.read().strip()
-            print(f'Begin logging in to your account:{accout}')
-            api = log_in(accout)
-            print(f'log suceess!')
+def main():
+    icloud_back = IcloudBack()
+    debug_mode = 0 # 调试模式, 直接给账户密码
+    if len(sys.argv) > 1: # 检查是否给了参数
+        first_log(sys.argv, icloud_back, debug_mode) # 首次登录
+    if not icloud_back.data_exis():
+        help_info()
+        exit(1)
 
+    while True:
+        with open(icloud_back.data_file_path, 'r') as f:
+            username = f.read().strip()
+            retrieved_password = keyring.get_password("icloud", username)
+            api = log_in(username, retrieved_password)
+            print(f'log suceess!')
         if api:
             print(f'start back-up photos...')
-            download_photos(api, para)
+            download_photos(api, icloud_back)
             del api
-            print(f'sync over, after {para.backup_fre_in_min} mins will sync again...')
-            time.sleep(para.backup_fre_in_min*60)
+            print(f'sync over, after {icloud_back.backup_fre_in_min} mins will sync again...')
+            time.sleep(icloud_back.backup_fre_in_min*60)
         else:
             print('error, please init again, will exit...')
             exit(-1)
